@@ -150,7 +150,7 @@ class SyntacticAnalyzer:
             return
         word = r''
         line += ' '
-        line = rf'{repr(line)[1:-1]}'
+        line = line
         temp_i = None
         temp_j = None
         temp_token = None

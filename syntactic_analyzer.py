@@ -41,26 +41,26 @@ NUMBERS_REGEX = r'[0-9]+'
 FLOAT_REGEX = r'[0-9]+\.[0-9]+'
 
 OPERATOR_SYMBOLS_TOKENS = {
-    "=": "assign",
-    ".": "period",
+    "-": "minus",
     ",": "comma",
     ";": "semicolon",
-    "]": "closing_bra",
-    "[": "opening_bra",
-    ")": "closing_par",
+    "!=": "neq",
+    "?": "question_mark",
+    ".": "period",
     "(": "opening_par",
-    "+": "plus",
-    "-": "minus",
+    ")": "closing_par",
+    "[": "opening_bra",
+    "]": "closing_bra",
     "*": "times",
     "/": "div",
     "%": "mod",
-    "==": "equal",
-    "!=": "neq",
+    "+": "plus",
     "<": "less",
     "<=": "leq",
+    "=": "assign",
+    "==": "equal",
     ">": "greater",
     ">=": "geq",
-    "?": "question_mark",
 }
 
 
@@ -128,17 +128,6 @@ class SyntacticAnalyzer:
         elif re.fullmatch(FLOAT_REGEX, word+next_char) is not None:
             return TokenType.FLOAT
         return None
-        number_type = None
-        for i in word:
-            if i in NUMBERS and number_type == TokenType.FLOAT:
-                number_type = TokenType.FLOAT
-            elif i in NUMBERS:
-                number_type = TokenType.INTEGER
-            elif i == '.':
-                number_type = TokenType.FLOAT
-            else:
-                return None
-        return number_type
 
     def analyze(self):
         self.tokens = []

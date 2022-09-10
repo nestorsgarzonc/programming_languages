@@ -1,6 +1,5 @@
 from enum import Enum
 import re
-from typing import List
 
 NUMBERS = "0123456789"
 
@@ -239,6 +238,22 @@ class SyntacticAnalyzer:
                         temp_j = j+1
                     temp_token = Token(
                         TokenType.RESERVED_WORD, f'tkn_{OPERATOR_SYMBOLS_TOKENS[temp_char]}', temp_i, temp_j
+                    )
+                    self.add_to_token_list(temp_token)
+                    temp_token = None
+                    word = r''
+                    temp_i = None
+                    temp_j = None
+                elif char+next_char in OPERATOR_SYMBOLS_TOKENS:
+                    if temp_token is not None:
+                        self.add_to_token_list(temp_token)
+                        temp_token = None
+                        word = r''
+                        temp_i = i+1
+                        temp_j = j+1
+                    ignore_next = True
+                    temp_token = Token(
+                        TokenType.RESERVED_WORD, f'tkn_{OPERATOR_SYMBOLS_TOKENS[char+next_char]}', temp_i, temp_j
                     )
                     self.add_to_token_list(temp_token)
                     temp_token = None

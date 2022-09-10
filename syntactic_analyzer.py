@@ -333,6 +333,10 @@ class SyntacticAnalyzer:
                         raise ValueError(
                             f'>>> Error lexico (linea: {i+1}, posicion: {j+1})'
                         )
+        if is_string:
+            raise ValueError(
+                f'>>> Error lexico (linea: {i+1}, posicion: {temp_j})'
+            )
         return self.tokens
 
 

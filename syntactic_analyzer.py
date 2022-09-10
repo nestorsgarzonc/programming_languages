@@ -32,6 +32,8 @@ RESERVED_WORDS = {
 }
 
 SPECIAL_CHARS_REGEX = r'[A-Za-z][A-Za-z0-9_]*'
+NUMBERS_REGEX = r'[0-9]+'
+FLOAT_REGEX = r'[0-9]+\.[0-9]+'
 
 OPERATOR_SYMBOLS_TOKENS = {
     "=": "assign",
@@ -113,7 +115,14 @@ class SyntacticAnalyzer:
     def is_id(self, word: str) -> bool:
         return re.fullmatch(SPECIAL_CHARS_REGEX, word) is not None
 
-    def get_number_type(self, word: str) -> TokenType:
+    def get_number_type(self, word: str, next_char: str) -> TokenType:
+        if re.fullmatch(NUMBERS_REGEX, word) is not None:
+            return TokenType.INTEGER
+        elif re.fullmatch(FLOAT_REGEX, word) is not None:
+            return TokenType.FLOAT
+        elif re.fullmatch(FLOAT_REGEX, word+next_char) is not None:
+            return TokenType.FLOAT
+        return None
         number_type = None
         for i in word:
             if i in NUMBERS and number_type == TokenType.FLOAT:
@@ -202,9 +211,10 @@ class SyntacticAnalyzer:
                     temp_token = Token(
                         TokenType.ID, word, temp_i, temp_j
                     )
-                elif self.get_number_type(word) is not None:
+                elif self.get_number_type(word, next_char) is not None:
                     temp_token = Token(
-                        self.get_number_type(word), word, temp_i, temp_j
+                        self.get_number_type(
+                            word, next_char), word, temp_i, temp_j
                     )
                 elif char in OPERATOR_SYMBOLS_TOKENS:
                     if self.counter_line == 0 and char == "/":
@@ -268,10 +278,10 @@ class SyntacticAnalyzer:
                             temp_token = Token(
                                 TokenType.ID, word, temp_i, temp_j
                             )
-                        elif self.get_number_type(word) is not None:
+                        elif self.get_number_type(word, next_char) is not None:
                             temp_token = Token(
                                 self.get_number_type(
-                                    word), word, temp_i, temp_j
+                                    word, next_char), word, temp_i, temp_j
                             )
                         elif char in OPERATOR_SYMBOLS_TOKENS:
                             temp_char = char

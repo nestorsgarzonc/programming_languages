@@ -6,8 +6,11 @@ NUMBERS = "0123456789"
 RESERVED_WORDS = {
     "AbsoluteValue",
     "and",
+    "array",
+    "decimal",
     "else",
     "elseif",
+    "evaluates",
     "float",
     "for",
     "Function",
@@ -17,8 +20,10 @@ RESERVED_WORDS = {
     "integer",
     "Main",
     "next",
+    "not",
     "or",
     "output",
+    "places",
     "Put",
     "RaiseToPower",
     "RandomNumber",
@@ -28,6 +33,7 @@ RESERVED_WORDS = {
     "SquareRoot",
     "to",
     "while",
+    "with",
 }
 
 SPECIAL_CHARS_REGEX = r'[A-Za-z][A-Za-z0-9_]*'

@@ -1,14 +1,8 @@
 from enum import Enum
-from lib2to3.pgen2 import token
 import re
 from typing import List
 
 NUMBERS = "0123456789"
-
-IDENTIFIERS_TYPE_DATA = {
-    "Get",
-    "or"
-}
 
 RESERVED_WORDS = {
     "if",
@@ -153,79 +147,98 @@ class SyntacticAnalyzer:
             temp_i = None
             temp_j = None
             temp_token = None
+            ignore_next = False
             is_string = False
             for j, char in enumerate(line):
-                if char == ' ' and not is_string:
-                    word = r''
-                    temp_i = None
-                    temp_j = None
-                    if temp_token is not None:
-                        self.add_to_token_list(temp_token)
-                        temp_token = None
-                    continue
-                word += char
-                if temp_i is None and temp_j is None:
-                    temp_i = i+1
-                    temp_j = j+1
-                if char == '"':
-                    word = word[:-1]
-                    if is_string:
-                        temp_token = Token(
-                            TokenType.STRING, word, temp_i, temp_j
-                        )
-                        self.add_to_token_list(temp_token)
-                        temp_token = None
-                        is_string = False
+                # TODO: CHECK IGNORE NEXT
+                if ignore_next:
+                    ignore_next = False
+                else:
+                    if char == ' ' and not is_string:
                         word = r''
                         temp_i = None
                         temp_j = None
-                    else:
-                        is_string = True
-                elif is_string:
-                    pass
-                elif word in RESERVED_WORDS:
-                    temp_token = Token(
-                        TokenType.RESERVED_WORD, word, temp_i, temp_j
-                    )
-                elif self.is_id(word):
-                    temp_token = Token(
-                        TokenType.ID, word, temp_i, temp_j
-                    )
-                elif self.get_number_type(word) is not None:
-                    temp_token = Token(
-                        self.get_number_type(word), word, temp_i, temp_j
-                    )
-                elif char in OPERATOR_SYMBOLS_TOKENS:
-                    if char == "/":
+                        if temp_token is not None:
+                            self.add_to_token_list(temp_token)
+                            temp_token = None
+                        continue
+                    word += char
+                    if temp_i is None and temp_j is None:
+                        temp_i = i+1
+                        temp_j = j+1
+                    if char == '"':
+                        word = word[:-1]
+                        if is_string:
+                            temp_token = Token(
+                                TokenType.STRING, word, temp_i, temp_j
+                            )
+                            self.add_to_token_list(temp_token)
+                            temp_token = None
+                            is_string = False
+                            word = r''
+                            temp_i = None
+                            temp_j = None
+                        else:
+                            is_string = True
+                    elif is_string:
+                        pass
+                    elif word in RESERVED_WORDS:
+                        temp_token = Token(
+                            TokenType.RESERVED_WORD, word, temp_i, temp_j
+                        )
+                    elif self.is_id(word):
+                        temp_token = Token(
+                            TokenType.ID, word, temp_i, temp_j
+                        )
+                    elif self.get_number_type(word) is not None:
+                        temp_token = Token(
+                            self.get_number_type(word), word, temp_i, temp_j
+                        )
+                    elif char in OPERATOR_SYMBOLS_TOKENS:
+                        if char == "/":
+                            try:
+                                if line[j+1] == '/':
+                                    break
+                            except:
+                                pass
+                        temp_char = char
                         try:
-                            prev_token = tokens[-1]
-                            if prev_token.value == 'tkn_div':
-                                tokens = tokens[:-1]
-                                break
+                            next_char = line[j+1]
+                            if temp_char+next_char in OPERATOR_SYMBOLS_TOKENS:
+                                temp_char = temp_char+next_char
+                                ignore_next = True
                         except:
                             pass
-                    if temp_token is not None:
+                        if temp_token is not None:
+                            self.add_to_token_list(temp_token)
+                            temp_token = None
+                            word = r''
+                            temp_i = i+1
+                            temp_j = j+1
+                        temp_token = Token(
+                            TokenType.RESERVED_WORD, f'tkn_{OPERATOR_SYMBOLS_TOKENS[temp_char]}', temp_i, temp_j
+                        )
                         self.add_to_token_list(temp_token)
                         temp_token = None
                         word = r''
-                        temp_i = i+1
-                        temp_j = j+1
-                    temp_token = Token(
-                        TokenType.RESERVED_WORD, f'tkn_{OPERATOR_SYMBOLS_TOKENS[char]}', temp_i, temp_j
-                    )
-                    self.add_to_token_list(temp_token)
-                    temp_token = None
-                    word = r''
-                    temp_i = None
-                    temp_j = None
-                else:
-                    raise Exception(
-                        f'>>> Error lexico(linea: {i+1}, posicion: {j+1})'
-                    )
-        return tokens
+                        temp_i = None
+                        temp_j = None
+                    # TODO: ADD CASES FOR JOINED WORDS AKA: 4.559not6!=="1"_id7
+                    else:
+                        if temp_token:
+                            self.add_to_token_list(temp_token)
+                            temp_token = None
+                            word = r''
+                            temp_i = None
+                            temp_j = None
+                            
+                        raise Exception(
+                            f'>>> Error lexico(linea: {i+1}, posicion: {j+1})'
+                        )
+        return self.tokens
 
 
-#token = Token(TokenType.ID, 'if', 1, 1)
+# token = Token(TokenType.ID, 'if', 1, 1)
 # token.print_token()
 # print(token.is_operator())
 text0 = [
@@ -241,26 +254,31 @@ text0 = [
     '',
 ]
 
-text1 = ["// This does not look good.",
-         "   put next To OuTpUt",
-         "",
-         "      // Now it’s almost fixed.",
-         "         Put NEXT to outPUT", ]
-text2 = ['float i',
-         '',
-         'for i = 0.0; i < 5; i = i + 1',
-         '   Put i to output',
-         '   Put " es un número.\n" to output', ]
-
+text1 = [
+    "// This does not look good.",
+    "   put next To OuTpUt",
+    "",
+    "      // Now it’s almost fixed.",
+    "         Put NEXT to outPUT",
+]
+text2 = [
+    'float i',
+    '',
+    'for i = 0.0; i < 5; i = i + 1',
+    '   Put i to output',
+    '   Put " es un número.\n" to output',
+]
 text3 = [
     'my_Var1 = +05',
     'my_Var_2 = -3.330',
 ]
+text4 = [
+    'if x >= 20:',
+    '   Put "Large" to output',
+    'elseif x <= 10:',
+    '   Put "Small" to output',
+]
 
-text4 = ['if x >= 20:',
-         '   Put "Large" to output',
-         'elseif x <= 10:',
-         '   Put "Small" to output', ]
+text5 = ['4.559not6!=="1"_id7']
 
-
-res = SyntacticAnalyzer().analyze(text4)
+SyntacticAnalyzer().analyze(text5)

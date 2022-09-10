@@ -111,7 +111,7 @@ class Token:
 
 class SyntacticAnalyzer:
     def is_id(self, word: str) -> bool:
-        return re.match(SPECIAL_CHARS_REGEX, word) is not None
+        return re.fullmatch(SPECIAL_CHARS_REGEX, word) is not None
 
     def get_number_type(self, word: str) -> TokenType:
         number_type = None
@@ -126,159 +126,189 @@ class SyntacticAnalyzer:
                 return None
         return number_type
 
-    def analyze(self, lines: List[str]):
+    def analyze(self):
+        self.tokens = []
+        counter_line = 0
         try:
-            self.process_text(lines)
-        except Exception as e:
+            while True:
+                line = input()
+                self.process_text(line, counter_line)
+                counter_line += 1
+        except ValueError as e:
             print(e)
+        except EOFError:
+            pass
 
     def add_to_token_list(self, token: Token):
         self.tokens.append(token)
+        self.counter_line += 1
         token.print_token()
 
-    def process_text(self, lines: List[str]):
-        self.tokens = []
-        for i, line in enumerate(lines):
-            if line == '':
-                continue
-            word = r''
-            line += ' '
-            line = rf'{repr(line)[1:-1]}'
-            temp_i = None
-            temp_j = None
-            temp_token = None
-            ignore_next = False
-            is_string = False
-            for j, char in enumerate(line):
-                # TODO: CHECK IGNORE NEXT
-                if ignore_next:
-                    ignore_next = False
-                else:
-                    if char == ' ' and not is_string:
+    def process_text(self, line: str, row: int):
+        i = row
+        if line == '':
+            return
+        word = r''
+        line += ' '
+        line = rf'{repr(line)[1:-1]}'
+        temp_i = None
+        temp_j = None
+        temp_token = None
+        ignore_next = False
+        is_string = False
+        self.counter_line = 0
+        for j, char in enumerate(line):
+            next_char = ''
+            try:
+                next_char = line[j + 1]
+            except:
+                pass
+            if ignore_next:
+                ignore_next = False
+            else:
+                if char == ' ' and not is_string:
+                    word = r''
+                    temp_i = None
+                    temp_j = None
+                    if temp_token is not None:
+                        self.add_to_token_list(temp_token)
+                        temp_token = None
+                    continue
+                word += char
+                if temp_i is None and temp_j is None:
+                    temp_i = i+1
+                    temp_j = j+1
+                if char == '"':
+                    word = word[:-1]
+                    if is_string:
+                        temp_token = Token(
+                            TokenType.STRING, word, temp_i, temp_j
+                        )
+                        self.add_to_token_list(temp_token)
+                        temp_token = None
+                        is_string = False
                         word = r''
                         temp_i = None
                         temp_j = None
-                        if temp_token is not None:
-                            self.add_to_token_list(temp_token)
-                            temp_token = None
-                        continue
-                    word += char
-                    if temp_i is None and temp_j is None:
+                    else:
+                        is_string = True
+                elif is_string:
+                    pass
+                elif word in RESERVED_WORDS:
+                    temp_token = Token(
+                        TokenType.RESERVED_WORD, word, temp_i, temp_j
+                    )
+                elif self.is_id(word):
+                    temp_token = Token(
+                        TokenType.ID, word, temp_i, temp_j
+                    )
+                elif self.get_number_type(word) is not None:
+                    temp_token = Token(
+                        self.get_number_type(word), word, temp_i, temp_j
+                    )
+                elif char in OPERATOR_SYMBOLS_TOKENS:
+                    if self.counter_line == 0 and char == "/":
+                        try:
+                            if line[j+1] == '/':
+                                break
+                        except:
+                            pass
+                    temp_char = char
+                    try:
+                        next_char = line[j+1]
+                        if temp_char+next_char in OPERATOR_SYMBOLS_TOKENS:
+                            temp_char = temp_char+next_char
+                            ignore_next = True
+                    except:
+                        pass
+                    if temp_token is not None:
+                        self.add_to_token_list(temp_token)
+                        temp_token = None
+                        word = r''
                         temp_i = i+1
                         temp_j = j+1
-                    if char == '"':
-                        word = word[:-1]
-                        if is_string:
+                    temp_token = Token(
+                        TokenType.RESERVED_WORD, f'tkn_{OPERATOR_SYMBOLS_TOKENS[temp_char]}', temp_i, temp_j
+                    )
+                    self.add_to_token_list(temp_token)
+                    temp_token = None
+                    word = r''
+                    temp_i = None
+                    temp_j = None
+                else:
+                    if temp_token:
+                        self.add_to_token_list(temp_token)
+                        temp_token = None
+                        word = r''+char
+                        temp_i = None
+                        temp_j = None
+                        if temp_i is None and temp_j is None:
+                            temp_i = i+1
+                            temp_j = j+1
+                        if char == '"':
+                            if is_string:
+                                temp_token = Token(
+                                    TokenType.STRING, word, temp_i, temp_j
+                                )
+                                self.add_to_token_list(temp_token)
+                                temp_token = None
+                                is_string = False
+                                word = r''
+                                temp_i = None
+                                temp_j = None
+                            else:
+                                is_string = True
+                        elif is_string:
+                            pass
+                        elif word in RESERVED_WORDS:
                             temp_token = Token(
-                                TokenType.STRING, word, temp_i, temp_j
+                                TokenType.RESERVED_WORD, word, temp_i, temp_j
+                            )
+                        elif self.is_id(word):
+                            temp_token = Token(
+                                TokenType.ID, word, temp_i, temp_j
+                            )
+                        elif self.get_number_type(word) is not None:
+                            temp_token = Token(
+                                self.get_number_type(
+                                    word), word, temp_i, temp_j
+                            )
+                        elif char in OPERATOR_SYMBOLS_TOKENS:
+                            temp_char = char
+                            try:
+                                next_char = line[j+1]
+                                if temp_char+next_char in OPERATOR_SYMBOLS_TOKENS:
+                                    temp_char = temp_char+next_char
+                                    ignore_next = True
+                            except:
+                                pass
+                            temp_token = Token(
+                                TokenType.RESERVED_WORD, f'tkn_{OPERATOR_SYMBOLS_TOKENS[temp_char]}', temp_i, temp_j
                             )
                             self.add_to_token_list(temp_token)
                             temp_token = None
-                            is_string = False
+                            word = r''
+                            temp_i = None
+                            temp_j = None
+                        elif char+next_char in OPERATOR_SYMBOLS_TOKENS:
+                            ignore_next = True
+                            temp_token = Token(
+                                TokenType.RESERVED_WORD, f'tkn_{OPERATOR_SYMBOLS_TOKENS[char+next_char]}', temp_i, temp_j
+                            )
+                            self.add_to_token_list(temp_token)
+                            temp_token = None
                             word = r''
                             temp_i = None
                             temp_j = None
                         else:
-                            is_string = True
-                    elif is_string:
-                        pass
-                    elif word in RESERVED_WORDS:
-                        temp_token = Token(
-                            TokenType.RESERVED_WORD, word, temp_i, temp_j
-                        )
-                    elif self.is_id(word):
-                        temp_token = Token(
-                            TokenType.ID, word, temp_i, temp_j
-                        )
-                    elif self.get_number_type(word) is not None:
-                        temp_token = Token(
-                            self.get_number_type(word), word, temp_i, temp_j
-                        )
-                    elif char in OPERATOR_SYMBOLS_TOKENS:
-                        if char == "/":
-                            try:
-                                if line[j+1] == '/':
-                                    break
-                            except:
-                                pass
-                        temp_char = char
-                        try:
-                            next_char = line[j+1]
-                            if temp_char+next_char in OPERATOR_SYMBOLS_TOKENS:
-                                temp_char = temp_char+next_char
-                                ignore_next = True
-                        except:
-                            pass
-                        if temp_token is not None:
-                            self.add_to_token_list(temp_token)
-                            temp_token = None
-                            word = r''
-                            temp_i = i+1
-                            temp_j = j+1
-                        temp_token = Token(
-                            TokenType.RESERVED_WORD, f'tkn_{OPERATOR_SYMBOLS_TOKENS[temp_char]}', temp_i, temp_j
-                        )
-                        self.add_to_token_list(temp_token)
-                        temp_token = None
-                        word = r''
-                        temp_i = None
-                        temp_j = None
-                    # TODO: ADD CASES FOR JOINED WORDS AKA: 4.559not6!=="1"_id7
+                            raise ValueError(
+                                f'>>> Error lexico (linea: {i+1}, posicion: {j+1})'
+                            )
                     else:
-                        if temp_token:
-                            self.add_to_token_list(temp_token)
-                            temp_token = None
-                            word = r''
-                            temp_i = None
-                            temp_j = None
-                            
-                        raise Exception(
-                            f'>>> Error lexico(linea: {i+1}, posicion: {j+1})'
+                        raise ValueError(
+                            f'>>> Error lexico (linea: {i+1}, posicion: {j+1})'
                         )
         return self.tokens
 
 
-# token = Token(TokenType.ID, 'if', 1, 1)
-# token.print_token()
-# print(token.is_operator())
-text0 = [
-    'Get integer or float',
-    '',
-    '   and',
-    '         Put input next',
-    '',
-    '',
-    '',
-    'to',
-    '      output',
-    '',
-]
-
-text1 = [
-    "// This does not look good.",
-    "   put next To OuTpUt",
-    "",
-    "      // Now it’s almost fixed.",
-    "         Put NEXT to outPUT",
-]
-text2 = [
-    'float i',
-    '',
-    'for i = 0.0; i < 5; i = i + 1',
-    '   Put i to output',
-    '   Put " es un número.\n" to output',
-]
-text3 = [
-    'my_Var1 = +05',
-    'my_Var_2 = -3.330',
-]
-text4 = [
-    'if x >= 20:',
-    '   Put "Large" to output',
-    'elseif x <= 10:',
-    '   Put "Small" to output',
-]
-
-text5 = ['4.559not6!=="1"_id7']
-
-SyntacticAnalyzer().analyze(text5)
+SyntacticAnalyzer().analyze()

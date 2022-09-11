@@ -147,6 +147,9 @@ class SyntacticAnalyzer:
         self.counter_line += 1
         token.print_token()
 
+    def is_backslach(self, char: str) -> bool:
+        return ord(char) == 92
+
     def process_text(self, line: str, row: int):
         i = row
         if line == '':
@@ -181,7 +184,12 @@ class SyntacticAnalyzer:
                 if temp_i is None and temp_j is None:
                     temp_i = i+1
                     temp_j = j+1
-                if char == '"':
+                if is_string and self.is_backslach(char):
+                    if next_char == '"':
+                        ignore_next = True
+                        word += next_char
+                    pass
+                elif char == '"':
                     word = word[:-1]
                     if is_string:
                         temp_token = Token(

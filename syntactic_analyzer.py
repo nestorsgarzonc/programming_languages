@@ -115,8 +115,6 @@ class Token:
     def is_id(self) -> bool:
         return self.type == TokenType.ID
 
-# TODO: CHECK Dad"df\"ff"fsd"fsd\"fs"
-
 
 class SyntacticAnalyzer:
     def is_id(self, word: str) -> bool:

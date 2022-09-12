@@ -115,6 +115,8 @@ class Token:
     def is_id(self) -> bool:
         return self.type == TokenType.ID
 
+# TODO: CHECK Dad"df\"ff"fsd"fsd\"fs"
+
 
 class SyntacticAnalyzer:
     def is_id(self, word: str) -> bool:
@@ -147,8 +149,12 @@ class SyntacticAnalyzer:
         self.counter_line += 1
         token.print_token()
 
-    def is_backslach(self, char: str) -> bool:
+    def is_backslash(self, char: str) -> bool:
         return ord(char) == 92
+
+    def manual_process(self, line: str):
+        self.tokens = []
+        self.process_text(line, 1)
 
     def process_text(self, line: str, row: int):
         i = row
@@ -184,12 +190,18 @@ class SyntacticAnalyzer:
                 if temp_i is None and temp_j is None:
                     temp_i = i+1
                     temp_j = j+1
-                if is_string and self.is_backslach(char):
-                    if next_char == '"':
+                if is_string and self.is_backslash(char):
+                    if next_char in ['"', "n", "t", chr(92)]:
                         ignore_next = True
                         word += next_char
                     pass
                 elif char == '"':
+                    if temp_token is not None and temp_token.type != TokenType.STRING:
+                        self.add_to_token_list(temp_token)
+                        temp_token = None
+                        word = char
+                        temp_i = i+1
+                        temp_j = j+1
                     word = word[:-1]
                     if is_string:
                         temp_token = Token(

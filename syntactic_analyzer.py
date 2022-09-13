@@ -105,18 +105,6 @@ class Token:
         else:
             print(self.id_word_str())
 
-    def is_reserved_word(self) -> bool:
-        return self.value in RESERVED_WORDS
-
-    def is_operator(self) -> str:
-        val = self.value in OPERATOR_SYMBOLS_TOKENS
-        if not val:
-            return None
-        return f'tkn_{OPERATOR_SYMBOLS_TOKENS[self.value]}'
-
-    def is_id(self) -> bool:
-        return self.type == TokenType.ID
-
 
 class SyntacticAnalyzer:
     def is_id(self, word: str) -> bool:
@@ -341,18 +329,15 @@ class SyntacticAnalyzer:
                             temp_i = None
                             temp_j = None
                         else:
-                            raise ValueError(
-                                f'>>> Error lexico (linea: {i+1}, posicion: {j+1})'
-                            )
+                            self.raise_error(i+1, j+1)
                     else:
-                        raise ValueError(
-                            f'>>> Error lexico (linea: {i+1}, posicion: {j+1})'
-                        )
+                        self.raise_error(i+1, j+1)
         if is_string:
-            raise ValueError(
-                f'>>> Error lexico (linea: {i+1}, posicion: {temp_j})'
-            )
+            self.raise_error(i+1, temp_j)
         return self.tokens
+
+    def raise_error(self, i, j):
+        raise ValueError(f'>>> Error lexico (linea: {i}, posicion: {j})')
 
 
 SyntacticAnalyzer().analyze()

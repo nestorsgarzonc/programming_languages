@@ -19,6 +19,8 @@ RESERVED_WORDS = {
     "input",
     "integer",
     "Main",
+    "places",
+    "nothing",
     "next",
     "not",
     "or",
